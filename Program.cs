@@ -61,15 +61,16 @@ namespace ConsoleAppUR
 
             //start program
             Console.WriteLine("Start program");
+
             string message2 = "def unity_realtime_control():\n" +
 " while (True):\n" +
 "  new_pose = [read_input_float_register(20), read_input_float_register(21), read_input_float_register(22), read_input_float_register(23), read_input_float_register(24), read_input_float_register(25)]\n" +
-"  servoj(new_pose, t = 0.01, lookahead_time = 0.1, gain = 500)\n" +
+"  write_input_bit_register(64, False)\n" +
+"  servoj(new_pose, t = 0.5, lookahead_time = 0.8, gain = 350)\n" +
 "  sync()\n" +
 " end\n" +
 "end\n";
             RtdeClient.URscriptCommand(IPadress, message2);
-            Thread.Sleep(1);
 
             //Control Threads
             PUB_RobotState = new(() => RobotStatePublisher.RunPublisher());

@@ -33,8 +33,7 @@ namespace ConsoleAppUR
         public double output_double_register_26;
         public double output_double_register_27;
         public double output_double_register_28;
-        public double output_double_register_29;
-        public bool input_bit_register_64;
+        public bool input_bit_register_90;
         // public int robot_mode;
 
         // free private & protected attributs are allows

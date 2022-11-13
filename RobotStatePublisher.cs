@@ -30,8 +30,7 @@ namespace ConsoleAppUR
             //
             while (true)
             {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine(UrOutputs.input_bit_register_64);
+                Console.WriteLine(UrOutputs.input_bit_register_90);
 
                 sample.SetValue(memberName: "J1", UrOutputs.actual_q[0]);
                 sample.SetValue(memberName: "J2", UrOutputs.actual_q[1]);

@@ -1,5 +1,7 @@
 ﻿using ConsoleAppUR;
+using Omg.Dds.Core;
 using Rti.Dds.Core;
+using Rti.Dds.Core.Policy;
 using Rti.Dds.Domain;
 using Rti.Dds.Publication;
 using Rti.Dds.Subscription;
@@ -19,6 +21,7 @@ namespace ConsoleAppUR
         public static Thread PUB_RobotState = null!;
         public static Thread SUB_Teleop = null!;
         public static Thread PUB_CameraRS = null!;
+        public static Thread ConsoleDebug = null!;
 
         public static UniversalRobot_Outputs UrOutputs = new UniversalRobot_Outputs();
         public static UniversalRobot_Inputs UrInputs = new UniversalRobot_Inputs();
@@ -47,10 +50,8 @@ namespace ConsoleAppUR
 
             // setup
             Ur3.Setup_Ur_Inputs(UrInputs);
-            Ur3.Setup_Ur_Outputs(UrOutputs, 125);
+            Ur3.Setup_Ur_Outputs(UrOutputs, 150);
             Ur3.Ur_ControlStart();
-
-
 
             UrInputs.input_double_register_20 = Math.PI / 180 * - 96;
             UrInputs.input_double_register_21 = Math.PI / 180  * - 60;
@@ -64,19 +65,21 @@ namespace ConsoleAppUR
             string m = "def unity():\n" +
 "  set_tcp(p[0,0,0.1493,0,0,0])\n" +
 " while (True):\n" +
-"  write_output_boolean_register(90, False)\n" +
 "  new_pose = [read_input_float_register(20), read_input_float_register(21), read_input_float_register(22), read_input_float_register(23), read_input_float_register(24), read_input_float_register(25)]\n" +
-"  servoj(new_pose, t = 0.5, lookahead_time = 0.8, gain = 350)\n" +
+"  servoj(new_pose, t = 0.02, lookahead_time = 1, gain = 350)\n" +
 "  sync()\n" +
 " end\n" +
 "end\n";
             RtdeClient.URscriptCommand(IPadress, m);
+            Console.Clear();
 
             //Control Threads
             PUB_RobotState = new(() => RobotStatePublisher.RunPublisher());
             SUB_Teleop = new(() => TeleopSubscriber.RunSubscriber());
-            //PUB_CameraRS = new(() => CameraIntelPublisher.RunPublisher());
-            //PUB_CameraRS.Start();
+            ConsoleDebug = new(() => consoleDebug.UpdateConsole());
+            PUB_CameraRS = new(() => CameraIntelPublisher.RunPublisher());
+            PUB_CameraRS.Start();
+            ConsoleDebug.Start();
             PUB_RobotState.Start();
             SUB_Teleop.Start();
         }

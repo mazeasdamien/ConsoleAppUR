@@ -19,6 +19,7 @@ namespace ConsoleAppUR
         public static Subscriber subscriber = null!;
 
         public static Thread PUB_RobotState = null!;
+        public static Thread SUB_PTstate = null!;
         public static Thread SUB_Teleop = null!;
         public static Thread PUB_CameraRS = null!;
         public static Thread ConsoleDebug = null!;
@@ -27,10 +28,12 @@ namespace ConsoleAppUR
         public static UniversalRobot_Inputs UrInputs = new UniversalRobot_Inputs();
 
         public static string IPadress = null!;
+        public static bool pt_processed;
 
         static void Main()
         {
             bool showMenu1 = true;
+            pt_processed = true;
             while (showMenu1)
             {
                 showMenu1 = Menu1();
@@ -78,6 +81,8 @@ namespace ConsoleAppUR
             SUB_Teleop = new(() => TeleopSubscriber.RunSubscriber());
             ConsoleDebug = new(() => consoleDebug.UpdateConsole());
             PUB_CameraRS = new(() => CameraIntelPublisher.RunPublisher());
+            SUB_PTstate = new(() => PTstate.RunSubscriber());
+            SUB_PTstate.Start();
             PUB_CameraRS.Start();
             ConsoleDebug.Start();
             PUB_RobotState.Start();

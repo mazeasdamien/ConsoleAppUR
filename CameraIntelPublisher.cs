@@ -89,11 +89,11 @@ namespace ConsoleAppUR
                     Thread.Sleep(30);
                     sample2.SetValue("Index", n);
                     sample2.SetValue("Values", firstHalf2);
-                    writer.Write(sample1);
+                    writer2.Write(sample1);
                     Thread.Sleep(30);
                     sample2.SetValue("Index", n);
                     sample2.SetValue("Values", secondHalf2);
-                    writer.Write(sample1);
+                    writer2.Write(sample1);
                     Thread.Sleep(30);
                 }               
             }

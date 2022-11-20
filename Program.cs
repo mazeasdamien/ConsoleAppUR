@@ -1,13 +1,11 @@
-﻿using ConsoleAppUR;
-using Omg.Dds.Core;
+﻿using Intel.RealSense;
 using Rti.Dds.Core;
-using Rti.Dds.Core.Policy;
 using Rti.Dds.Domain;
 using Rti.Dds.Publication;
 using Rti.Dds.Subscription;
 using Rti.Dds.Topics;
 using Rti.Types.Dynamic;
-using System;
+using System.ComponentModel;
 
 namespace ConsoleAppUR
 {
@@ -19,7 +17,6 @@ namespace ConsoleAppUR
         public static Subscriber subscriber = null!;
 
         public static Thread PUB_RobotState = null!;
-        public static Thread SUB_PTstate = null!;
         public static Thread SUB_Teleop = null!;
         public static Thread PUB_CameraRS = null!;
         public static Thread ConsoleDebug = null!;
@@ -27,13 +24,27 @@ namespace ConsoleAppUR
         public static UniversalRobot_Outputs UrOutputs = new UniversalRobot_Outputs();
         public static UniversalRobot_Inputs UrInputs = new UniversalRobot_Inputs();
 
+        public static RtdeClient Ur3 = new RtdeClient();
         public static string IPadress = null!;
-        public static bool pt_processed;
+
+        public const int CAMERA_WIDTH = 640;
+        public const int CAMERA_HEIGHT = 480;
+
+        public const int FPS = 30;
+
+        public static byte[] colorArray = new byte[CAMERA_WIDTH * CAMERA_HEIGHT * 3];
+        public static List<float> depthArray = new List<float>();
+
+        public static bool ptsent;
 
         static void Main()
         {
+            Console.CancelKeyPress += delegate {
+                OnDestroy();
+            };
+
             bool showMenu1 = true;
-            pt_processed = true;
+            ptsent = false;
             while (showMenu1)
             {
                 showMenu1 = Menu1();
@@ -48,7 +59,6 @@ namespace ConsoleAppUR
             subscriber = domainParticipant.CreateSubscriber(subscriberQos);
 
             //Robot stuff
-            RtdeClient Ur3 = new RtdeClient();
             Ur3.Connect(IPadress, 2);
 
             // setup
@@ -81,12 +91,60 @@ namespace ConsoleAppUR
             SUB_Teleop = new(() => TeleopSubscriber.RunSubscriber());
             ConsoleDebug = new(() => consoleDebug.UpdateConsole());
             PUB_CameraRS = new(() => CameraIntelPublisher.RunPublisher());
-            SUB_PTstate = new(() => PTstate.RunSubscriber());
-            SUB_PTstate.Start();
             PUB_CameraRS.Start();
             ConsoleDebug.Start();
             PUB_RobotState.Start();
             SUB_Teleop.Start();
+
+            var cfg = new Config();
+            cfg.EnableStream(Intel.RealSense.Stream.Depth, CAMERA_WIDTH, CAMERA_HEIGHT, Format.Z16, FPS);
+            cfg.EnableStream(Intel.RealSense.Stream.Color, CAMERA_WIDTH, CAMERA_HEIGHT, Format.Rgb8, FPS);
+            var pipe = new Pipeline();
+            var pc = new PointCloud();
+            pipe.Start(cfg);
+            
+            while (true)
+            {
+                if (ptsent == false)
+                {
+                    depthArray.Clear();
+
+                    using (var frames = pipe.WaitForFrames())
+                    using (var depth = frames.DepthFrame)
+                    using (var color = frames.ColorFrame)
+                    {
+                        Align align = new Align(Intel.RealSense.Stream.Color).DisposeWith(frames);
+                        Frame aligned = align.Process(frames).DisposeWith(frames);
+                        FrameSet alignedframeset = aligned.As<FrameSet>().DisposeWith(frames);
+                        var colorFrame = alignedframeset.ColorFrame.DisposeWith(alignedframeset);
+                        colorFrame.CopyTo(colorArray);
+                        
+                        for (int x = 0; x < CAMERA_WIDTH - 1; x++)
+                        {
+                            for (int y = 0; y < CAMERA_HEIGHT - 1; y++)
+                            {
+                                depthArray.Add(depth.GetDistance(x, y));
+                            }
+                        }
+                        ptsent = true;
+                    }
+                }
+            }
+        }
+
+        public static void OnDestroy()
+        {
+            Console.WriteLine("stop");
+            Ur3.Disconnect();
+            publisher.Dispose();
+            subscriber.Dispose();
+            domainParticipant.Dispose();
+            provider.Dispose();
+            PUB_CameraRS.Interrupt();
+            ConsoleDebug.Interrupt();
+            PUB_RobotState.Interrupt();
+            SUB_Teleop.Interrupt();
+            Environment.Exit(0);
         }
 
         public static DataWriter<DynamicData> SetupDataWriter(string topicName, Publisher publisher, DynamicType dynamicData)

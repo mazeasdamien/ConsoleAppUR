@@ -4,6 +4,7 @@
     {
         public static void UpdateConsole()
         {
+            
             Console.Title = "UR16e Remote controll";
             while (true)
             {
@@ -13,7 +14,9 @@
                 Console.ForegroundColor = ConsoleColor.Blue;
                 Console.WriteLine(TeleopSubscriber.debugTeleop);
                 Console.ForegroundColor = ConsoleColor.Magenta;
-                Console.WriteLine(CameraIntelPublisher.debugCam);
+                Console.WriteLine($" {CameraDepthTopicPublisher.debugCam}");
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine($" {debug}");
             }
         }
     }

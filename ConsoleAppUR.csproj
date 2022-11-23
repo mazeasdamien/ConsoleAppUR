@@ -9,9 +9,12 @@
 
   <ItemGroup>
     <PackageReference Include="Intel.RealSenseWithNativeDll" Version="2.47.0" />
+    <PackageReference Include="K4os.Compression.LZ4" Version="1.2.16" />
+    <PackageReference Include="K4os.Compression.LZ4.Streams" Version="1.2.16" />
     <PackageReference Include="Rti.ConnextDds" Version="6.1.1" />
     <PackageReference Include="Rti.ConnextDds.Extra" Version="6.1.1" />
     <PackageReference Include="Rti.ConnextDds.Native" Version="6.1.1" />
+    <PackageReference Include="Unity3D.SDK" Version="2021.1.14.1" />
   </ItemGroup>
 
 </Project>

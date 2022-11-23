@@ -13,8 +13,8 @@ namespace ConsoleAppUR
         public static void RunPublisher()
         {
             var typeFactory = DynamicTypeFactory.Instance;
-            StructType RobotState = typeFactory.BuildStruct()
-                .WithName("RobotState")
+            StructType RobotStateTopic = typeFactory.BuildStruct()
+                .WithName("RobotStateTopic")
                 .AddMember(new StructMember("J1", typeFactory.GetPrimitiveType<double>()))
                 .AddMember(new StructMember("J2", typeFactory.GetPrimitiveType<double>()))
                 .AddMember(new StructMember("J3", typeFactory.GetPrimitiveType<double>()))
@@ -29,8 +29,8 @@ namespace ConsoleAppUR
                 .AddMember(new StructMember("RZ", typeFactory.GetPrimitiveType<double>()))
                 .Create();
 
-            DataWriter<DynamicData> writer = SetupDataWriter("RobotState_Topic", publisher, RobotState);
-            var sample = new DynamicData(RobotState);
+            DataWriter<DynamicData> writer = SetupDataWriter("RobotStateTopic", publisher, RobotStateTopic);
+            var sample = new DynamicData(RobotStateTopic);
             
             int n = 1;
             double[] robotValue = new double[12];

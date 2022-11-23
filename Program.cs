@@ -5,7 +5,7 @@ using Rti.Dds.Publication;
 using Rti.Dds.Subscription;
 using Rti.Dds.Topics;
 using Rti.Types.Dynamic;
-using System.ComponentModel;
+using System.IO.Compression;
 
 namespace ConsoleAppUR
 {
@@ -18,7 +18,8 @@ namespace ConsoleAppUR
 
         public static Thread PUB_RobotState = null!;
         public static Thread SUB_Teleop = null!;
-        public static Thread PUB_CameraRS = null!;
+        public static Thread PUB_CameraColorTopicPublisher = null!;
+        public static Thread PUB_CameraDepthTopicPublisher = null!;
         public static Thread ConsoleDebug = null!;
 
         public static UniversalRobot_Outputs UrOutputs = new UniversalRobot_Outputs();
@@ -33,9 +34,14 @@ namespace ConsoleAppUR
         public const int FPS = 30;
 
         public static byte[] colorArray = new byte[CAMERA_WIDTH * CAMERA_HEIGHT * 3];
-        public static List<float> depthArray = new List<float>();
 
-        public static bool ptsent;
+        public static List<float> DEPTHDATA = new List<float>();
+        public static List<byte> COLORDATA = new List<byte>();
+
+        public static bool ptsentColor;
+        public static bool ptsentDepth;
+
+        public static string debug = "";
 
         static void Main()
         {
@@ -44,18 +50,19 @@ namespace ConsoleAppUR
             };
 
             bool showMenu1 = true;
-            ptsent = false;
+            ptsentColor = false;
+            ptsentDepth = false;
             while (showMenu1)
             {
                 showMenu1 = Menu1();
             }
 
             //DDS stuff
-            provider = new QosProvider("TelexistenceRig.xml");
+            provider = new QosProvider("URGrenoble.xml");
             domainParticipant = DomainParticipantFactory.Instance.CreateParticipant(0, provider.GetDomainParticipantQos());
-            var publisherQos = provider.GetPublisherQos("RigQoSLibrary::RigQoSProfile");
+            var publisherQos = provider.GetPublisherQos("QosURGrenoble::QosProfile");
             publisher = domainParticipant.CreatePublisher(publisherQos);
-            var subscriberQos = provider.GetSubscriberQos("RigQoSLibrary::RigQoSProfile");
+            var subscriberQos = provider.GetSubscriberQos("QosURGrenoble::QosProfile");
             subscriber = domainParticipant.CreateSubscriber(subscriberQos);
 
             //Robot stuff
@@ -90,8 +97,8 @@ namespace ConsoleAppUR
             PUB_RobotState = new(() => RobotStatePublisher.RunPublisher());
             SUB_Teleop = new(() => TeleopSubscriber.RunSubscriber());
             ConsoleDebug = new(() => consoleDebug.UpdateConsole());
-            PUB_CameraRS = new(() => CameraIntelPublisher.RunPublisher());
-            PUB_CameraRS.Start();
+            PUB_CameraDepthTopicPublisher = new(() => CameraDepthTopicPublisher.RunPublisher());
+            PUB_CameraDepthTopicPublisher.Start();
             ConsoleDebug.Start();
             PUB_RobotState.Start();
             SUB_Teleop.Start();
@@ -105,31 +112,57 @@ namespace ConsoleAppUR
             
             while (true)
             {
-                if (ptsent == false)
+                if (ptsentColor == false || ptsentDepth == false)
                 {
-                    depthArray.Clear();
-
                     using (var frames = pipe.WaitForFrames())
                     using (var depth = frames.DepthFrame)
                     using (var color = frames.ColorFrame)
+                    using (var points = pc.Process(depth).As<Points>())
                     {
                         Align align = new Align(Intel.RealSense.Stream.Color).DisposeWith(frames);
                         Frame aligned = align.Process(frames).DisposeWith(frames);
                         FrameSet alignedframeset = aligned.As<FrameSet>().DisposeWith(frames);
                         var colorFrame = alignedframeset.ColorFrame.DisposeWith(alignedframeset);
                         colorFrame.CopyTo(colorArray);
-                        
-                        for (int x = 0; x < CAMERA_WIDTH - 1; x++)
+
+                        var vertices = new float[points.Count * 3];
+                        points.CopyVertices(vertices);
+
+                        for (int i = 0; i < vertices.Length; i+=3)
                         {
-                            for (int y = 0; y < CAMERA_HEIGHT - 1; y++)
+                            if (i % 2 == 0)
+                            { 
+                            if (vertices[i + 2] > 0.1 && vertices[i + 2] < 1)
                             {
-                                depthArray.Add(depth.GetDistance(x, y));
+                                if (colorArray[i] != 0 || colorArray[i+1] != 0 || colorArray[i+2] != 0)
+                                {
+                                        DEPTHDATA.Add(vertices[i]);
+                                        DEPTHDATA.Add(vertices[i + 1]);
+                                        DEPTHDATA.Add(vertices[i + 2]);
+                                        COLORDATA.Add(colorArray[i]);
+                                        COLORDATA.Add(colorArray[i + 1]);
+                                        COLORDATA.Add(colorArray[i + 3]);
+                                    }
+                                }
                             }
                         }
-                        ptsent = true;
+
+                        ptsentColor = true;
+                        ptsentDepth = true;
+                        Thread.Sleep(100);
                     }
                 }
             }
+        }
+
+        public static byte[] Compress(byte[] data)
+        {
+            MemoryStream output = new MemoryStream();
+            using (DeflateStream dstream = new DeflateStream(output, System.IO.Compression.CompressionLevel.Optimal))
+            {
+                dstream.Write(data, 0, data.Length);
+            }
+            return output.ToArray();
         }
 
         public static void OnDestroy()
@@ -140,7 +173,8 @@ namespace ConsoleAppUR
             subscriber.Dispose();
             domainParticipant.Dispose();
             provider.Dispose();
-            PUB_CameraRS.Interrupt();
+            PUB_CameraColorTopicPublisher.Interrupt();
+            PUB_CameraColorTopicPublisher.Interrupt();
             ConsoleDebug.Interrupt();
             PUB_RobotState.Interrupt();
             SUB_Teleop.Interrupt();
@@ -151,7 +185,7 @@ namespace ConsoleAppUR
         {
             DataWriter<DynamicData> writer;
             Topic<DynamicData> topic = domainParticipant.CreateTopic(topicName, dynamicData);
-            var writerQos = provider.GetDataWriterQos("RigQoSLibrary::RigQoSProfile");
+            var writerQos = provider.GetDataWriterQos("QosURGrenoble::QosProfile");
             writer = publisher.CreateDataWriter(topic, writerQos);
             return writer;
         }
@@ -160,7 +194,7 @@ namespace ConsoleAppUR
         {
             DataReader<DynamicData> reader;
             Topic<DynamicData> topic = domainParticipant.CreateTopic(topicName, dynamicData);
-            var readerQos = provider.GetDataReaderQos("RigQoSLibrary::RigQoSProfile");
+            var readerQos = provider.GetDataReaderQos("QosURGrenoble::QosProfile");
             reader = subscriber.CreateDataReader(topic, readerQos);
             return reader;
         }

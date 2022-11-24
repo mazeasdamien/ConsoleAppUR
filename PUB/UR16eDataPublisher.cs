@@ -1,19 +1,16 @@
-﻿using Rti.Dds.Publication;
-using Rti.Types.Dynamic;
-using System.Collections.ObjectModel;
-using System.Diagnostics;
-using System.Net.Sockets;
+﻿using Rti.Types.Dynamic;
 
-namespace ConsoleAppUR
+namespace ConsoleAppUR.PUB
 {
-    internal class RobotStatePublisher : Program
+    internal class UR16eDataPublisher : Program
     {
         public const float Rad2Deg = 57.29578f;
         public static string debugRobotState = "";
         public static void RunPublisher()
         {
             var typeFactory = DynamicTypeFactory.Instance;
-            StructType RobotStateTopic = typeFactory.BuildStruct()
+
+            var RobotStateTopic = typeFactory.BuildStruct()
                 .WithName("RobotStateTopic")
                 .AddMember(new StructMember("J1", typeFactory.GetPrimitiveType<double>()))
                 .AddMember(new StructMember("J2", typeFactory.GetPrimitiveType<double>()))
@@ -29,11 +26,11 @@ namespace ConsoleAppUR
                 .AddMember(new StructMember("RZ", typeFactory.GetPrimitiveType<double>()))
                 .Create();
 
-            DataWriter<DynamicData> writer = SetupDataWriter("RobotStateTopic", publisher, RobotStateTopic);
+            var writer = SetupDataWriter("RobotStateTopic", Publisher_UR, RobotStateTopic);
             var sample = new DynamicData(RobotStateTopic);
-            
-            int n = 1;
-            double[] robotValue = new double[12];
+
+            var n = 1;
+            var robotValue = new double[12];
 
             while (true)
             {
@@ -83,9 +80,11 @@ namespace ConsoleAppUR
                         $"RX: {Math.Round(UrOutputs.actual_TCP_pose[3], 3)}   \n" +
                         $"RY: {Math.Round(UrOutputs.actual_TCP_pose[4], 3)}   \n" +
                         $"RZ: {Math.Round(UrOutputs.actual_TCP_pose[5], 3)}   \n\n";
+
                     n++;
                     writer.Write(sample);
                 }
+
                 Thread.Sleep(2);
             }
         }

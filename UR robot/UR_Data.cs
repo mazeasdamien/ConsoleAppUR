@@ -17,15 +17,13 @@ VECTOR6UINT32 : uint[]
 TODO and not TODO : do not declare public fields with other types & creates the array with the right size
 
 */
-using System;
 
-namespace ConsoleAppUR
+namespace ConsoleAppUR.URrobot
 {
-
     [Serializable]
     public class UniversalRobot_Outputs
     {
-       // public double io_current; // check the fields name in the RTDE guide : MUST be the same with the same type
+        // public double io_current; // check the fields name in the RTDE guide : MUST be the same with the same type
         public double[] actual_q = new double[6]; // array creation must be done here to give the size
         public double[] actual_TCP_pose = new double[6]; // array creation must be done here to give the size
         public double output_double_register_24; //TESTJ1
@@ -43,7 +41,6 @@ namespace ConsoleAppUR
     [Serializable]
     public class UniversalRobot_Inputs
     {
-
         public double input_double_register_20;
         public double input_double_register_21;
         public double input_double_register_22;

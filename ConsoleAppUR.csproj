@@ -14,7 +14,7 @@
     <PackageReference Include="Rti.ConnextDds" Version="6.1.1" />
     <PackageReference Include="Rti.ConnextDds.Extra" Version="6.1.1" />
     <PackageReference Include="Rti.ConnextDds.Native" Version="6.1.1" />
-    <PackageReference Include="Unity3D.SDK" Version="2021.1.14.1" />
+    <PackageReference Include="System.Drawing.Common" Version="7.0.0" />
   </ItemGroup>
 
 </Project>

@@ -1,23 +1,23 @@
 ﻿using ConsoleAppUR.PUB;
 using ConsoleAppUR.SUB;
 using ConsoleAppUR.URrobot;
-using Intel.RealSense;
 using Rti.Dds.Core;
 using Rti.Dds.Domain;
 using Rti.Dds.Publication;
 using Rti.Dds.Subscription;
 using Rti.Types.Dynamic;
-using System.Drawing;
 
 namespace ConsoleAppUR
 {
     public class Program
     {
+        // DDS protocol
         public static DomainParticipant domainParticipant = null!;
         public static QosProvider provider = null!;
         public static Publisher Publisher_UR = null!;
         public static Subscriber Subscriber_UR = null!;
 
+        // Threads
         private static Thread PUB_RobotState = null!;
         private static Thread SUB_Teleop = null!;
         private static Thread PUB_CameraColorTopicPublisher = null!;
@@ -26,17 +26,16 @@ namespace ConsoleAppUR
         private static Thread PUB_VideoFeed = null!;
         private static Thread Run_Camera = null!;
 
+        // UR16e
         public static UniversalRobot_Outputs UrOutputs = new UniversalRobot_Outputs();
         public static UniversalRobot_Inputs UrInputs = new UniversalRobot_Inputs();
-
         public static RtdeClient Ur3 = new RtdeClient();
         public static string IPadress = null!;
 
+        // Intel Camera
         public static byte[] colorData;
-
         public static List<float> DEPTHDATA = new List<float>();
         public static List<byte> COLORDATA = new List<byte>();
-
         public static bool ptsentColor;
         public static bool ptsentDepth;
 

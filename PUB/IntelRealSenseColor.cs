@@ -1,6 +1,8 @@
-﻿using Rti.Dds.Publication;
+﻿using K4os.Compression.LZ4;
+using Rti.Dds.Publication;
 using Rti.Types.Dynamic;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -33,9 +35,10 @@ namespace ConsoleAppUR.PUB
                 {
                     n++;
                     sample.SetValue("Index", n);
-                    sample.SetValue("Color", COLORDATA.ToArray());
+                    byte[] compressedArray = LZ4Pickler.Pickle(COLORDATA.ToArray());
+                    sample.SetValue("Color", compressedArray);
 
-                    debugCam =$" {n}  Color size {COLORDATA.ToArray().Length}                                 \n";
+                    debugCam =$" {n}  Color size {COLORDATA.ToArray().Length}  compressed: {compressedArray.Length}                 ";
 
                     if (COLORDATA.ToArray().Length > 1000)
                     {

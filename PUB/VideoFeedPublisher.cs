@@ -1,11 +1,6 @@
 ﻿using Rti.Types.Dynamic;
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using K4os.Compression.LZ4;
 
 namespace ConsoleAppUR.PUB
 {
@@ -32,13 +27,13 @@ namespace ConsoleAppUR.PUB
             {
                 if (colorData != null)
                 {
-                    Bitmap bitmap = GetDataPicture(640, 480, colorData);
-                    byte [] jpegfeed = ImageToByte(bitmap);
+                    byte[] compressedjpeg = LZ4Pickler.Pickle(colorData);
                     n++;
-                    debugCam = $" {n}  Image size  {jpegfeed.Length}                                   \n";
+                    debugCam = $" {n}  Image size  {colorData.Length}  compressed: {compressedjpeg.Length}                        \n";
                     sample.SetValue("Index", n);
-                    sample.SetValue("Memory", jpegfeed);
+                    sample.SetValue("Memory", compressedjpeg);
                     writer.Write(sample);
+                    Thread.Sleep(40);
                 }
             }
         }
@@ -49,30 +44,5 @@ namespace ConsoleAppUR.PUB
             ImageConverter converter = new();
             return (byte[])converter.ConvertTo(img, typeof(byte[]));
         }
-
-        public static Bitmap GetDataPicture(int w, int h, byte[] data)
-        {
-            var pic = new Bitmap(w, h, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
-
-            for (int x = 0; x < w; x++)
-            {
-                for (int y = 0; y < h; y++)
-                {
-                    var arrayIndex = y * w + x;
-
-                    var c = Color.FromArgb(
-                       data[arrayIndex],
-                       data[arrayIndex + 1],
-                       data[arrayIndex + 2],
-                       data[arrayIndex + 3]
-                    );
-
-                    pic.SetPixel(x, y, c);
-                }
-            }
-
-            return pic;
-        }
-
     }
 }

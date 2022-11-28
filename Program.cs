@@ -56,32 +56,14 @@ namespace ConsoleAppUR
 
             ///////////////////////////////////////////////////////////
 
-            InitDDS();
-            InitRobotUR16e();
-            InitThreads();
-            Console.Clear();
-        }
+            Console.WriteLine("Init DDS");
+            provider = new QosProvider("URGrenoble.xml");
+            domainParticipant = DomainParticipantFactory.Instance.CreateParticipant(0, provider.GetDomainParticipantQos());
+            var publisherQos = provider.GetPublisherQos("QosURGrenoble::QosProfile");
+            Publisher_UR = domainParticipant.CreatePublisher(publisherQos);
+            var subscriberQos = provider.GetSubscriberQos("QosURGrenoble::QosProfile");
+            Subscriber_UR = domainParticipant.CreateSubscriber(subscriberQos);
 
-        public static void InitThreads()
-        {
-            Console.WriteLine("Init Threads");
-            Run_Camera = new(() => RunCamera.RunCam());
-            PUB_RobotState = new(() => UR16eDataPublisher.RunPublisher());
-            SUB_Teleop = new(() => UnityIKSolutionSubscriber.RunSubscriber());
-            ConsoleDebug = new(() => consoleDebugPrinter.UpdateConsole());
-            PUB_CameraDepthTopicPublisher = new(() => IntelRealSenseDataPublisher.RunPublisher());
-            PUB_CameraColorTopicPublisher = new(() => IntelRealSenseColor.RunPublisher());
-            PUB_VideoFeed = new(() => VideoFeedPublisher.RunPublisher());
-            Run_Camera.Start();
-            PUB_CameraDepthTopicPublisher.Start();
-            PUB_CameraColorTopicPublisher.Start();
-            ConsoleDebug.Start();
-            PUB_RobotState.Start();
-            SUB_Teleop.Start();
-            PUB_VideoFeed.Start();
-        }
-        public static void InitRobotUR16e()
-        {
             Console.WriteLine("Init Robot UR16e");
 
             Ur3.Connect(IPadress, 2);
@@ -110,17 +92,26 @@ namespace ConsoleAppUR
 "end\n";
 
             RtdeClient.URscriptCommand(IPadress, m);
+
+            Console.WriteLine("Init Threads");
+            Run_Camera = new(() => RunCamera.RunCam());
+            PUB_RobotState = new(() => UR16eDataPublisher.RunPublisher());
+            SUB_Teleop = new(() => UnityIKSolutionSubscriber.RunSubscriber());
+            ConsoleDebug = new(() => consoleDebugPrinter.UpdateConsole());
+            PUB_CameraDepthTopicPublisher = new(() => IntelRealSenseDataPublisher.RunPublisher());
+            PUB_CameraColorTopicPublisher = new(() => IntelRealSenseColor.RunPublisher());
+            PUB_VideoFeed = new(() => VideoFeedPublisher.RunPublisher());
+            Run_Camera.Start();
+            PUB_CameraDepthTopicPublisher.Start();
+            PUB_CameraColorTopicPublisher.Start();
+            ConsoleDebug.Start();
+            PUB_RobotState.Start();
+            SUB_Teleop.Start();
+            PUB_VideoFeed.Start();
+
+            Console.Clear();
         }
-        public static void InitDDS()
-        {
-            Console.WriteLine("Init DDS");
-            provider = new QosProvider("URGrenoble.xml");
-            domainParticipant = DomainParticipantFactory.Instance.CreateParticipant(0, provider.GetDomainParticipantQos());
-            PublisherQos publisherQos = provider.GetPublisherQos("QosURGrenoble::QosProfile");
-            Publisher_UR = domainParticipant.CreatePublisher(publisherQos);
-            SubscriberQos subscriberQos = provider.GetSubscriberQos("QosURGrenoble::QosProfile");
-            Subscriber_UR = domainParticipant.CreateSubscriber(subscriberQos);
-        }
+
         public static void OnDestroy()
         {
             Console.WriteLine("stop");

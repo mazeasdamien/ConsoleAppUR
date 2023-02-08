@@ -10,6 +10,8 @@
             <initial_peers>
               <element>DPC000554.cns.cranfield.ac.uk</element>
               <element>LAP002408.cns.cranfield.ac.uk</element>
+              <element>169.254.73.124</element>
+              <element>169.254.24.105</element>
             </initial_peers>
           </discovery>
           <participant_name>

@@ -20,11 +20,7 @@ namespace ConsoleAppUR
         // Threads
         private static Thread PUB_RobotState = null!;
         private static Thread SUB_Teleop = null!;
-        private static Thread PUB_CameraColorTopicPublisher = null!;
-        private static Thread PUB_CameraDepthTopicPublisher = null!;
         private static Thread ConsoleDebug = null!;
-        private static Thread PUB_VideoFeed = null!;
-        private static Thread Run_Camera = null!;
 
         // UR16e
         public static UniversalRobot_Outputs UrOutputs = new UniversalRobot_Outputs();
@@ -94,20 +90,12 @@ namespace ConsoleAppUR
             RtdeClient.URscriptCommand(IPadress, m);
 
             Console.WriteLine("Init Threads");
-            Run_Camera = new(() => RunCamera.RunCam());
             PUB_RobotState = new(() => UR16eDataPublisher.RunPublisher());
             SUB_Teleop = new(() => UnityIKSolutionSubscriber.RunSubscriber());
-            ConsoleDebug = new(() => consoleDebugPrinter.UpdateConsole());
-            PUB_CameraDepthTopicPublisher = new(() => IntelRealSenseDataPublisher.RunPublisher());
-            PUB_CameraColorTopicPublisher = new(() => IntelRealSenseColor.RunPublisher());
-            PUB_VideoFeed = new(() => VideoFeedPublisher.RunPublisher());
-            Run_Camera.Start();
-            PUB_CameraDepthTopicPublisher.Start();
-            PUB_CameraColorTopicPublisher.Start();
+            ConsoleDebug = new(() => consoleDebugPrinter.UpdateConsole());;
             ConsoleDebug.Start();
             PUB_RobotState.Start();
             SUB_Teleop.Start();
-            PUB_VideoFeed.Start();
 
             Console.Clear();
         }
@@ -115,9 +103,6 @@ namespace ConsoleAppUR
         public static void OnDestroy()
         {
             Console.WriteLine("stop");
-            PUB_CameraColorTopicPublisher.Interrupt();
-            PUB_CameraColorTopicPublisher.Interrupt();
-            PUB_VideoFeed.Interrupt();
             ConsoleDebug.Interrupt();
             PUB_RobotState.Interrupt();
             SUB_Teleop.Interrupt();
